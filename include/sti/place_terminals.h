@@ -16,24 +16,26 @@ std::vector<int> place_terminals_poisson(const std::unique_ptr<geometrycentral::
     option.minDist = radius * space;
     const std::vector<geometrycentral::surface::SurfacePoint> samples = poissonSampler.sample(option);
 
-    std::set<int> terminals;
+    std::vector<int> terminals;
     for(const auto& p : samples) {
         if(0 <= p.face.getIndex() and p.face.getIndex() < mesh->nFaces()) {
-            terminals.insert(p.face.getIndex());
+            terminals.emplace_back(p.face.getIndex());
         }
     }
 
-    const std::vector<int> res(terminals.begin(), terminals.end());
-    return res;
+    std::sort(terminals.begin(), terminals.end());
+    terminals.erase(std::unique(terminals.begin(), terminals.end()), terminals.end());
+
+    return terminals;
 }
 
 std::vector<int> place_terminals_voxel(const std::unique_ptr<geometrycentral::surface::ManifoldSurfaceMesh>& mesh, const std::unique_ptr<geometrycentral::surface::VertexPositionGeometry>& geometry, const double radius, const double space) {
     const double interval = space * radius;
     struct VoxelIndexHash {
         std::size_t operator()(const std::tuple<int, int, int>& k) const {
-            std::size_t h1 = std::hash<int>{}(std::get<0>(k));
-            std::size_t h2 = std::hash<int>{}(std::get<1>(k));
-            std::size_t h3 = std::hash<int>{}(std::get<2>(k));
+            const std::size_t h1 = std::hash<int>{}(std::get<0>(k));
+            const std::size_t h2 = std::hash<int>{}(std::get<1>(k));
+            const std::size_t h3 = std::hash<int>{}(std::get<2>(k));
             return h1 ^ (h2 << 1) ^ (h3 << 2);
         }
     };
@@ -53,19 +55,23 @@ std::vector<int> place_terminals_voxel(const std::unique_ptr<geometrycentral::su
     }
     std::vector<int> terminals;
     for(const auto& it : mp) {
-        terminals.push_back(std::get<1>(it.second));
+        terminals.emplace_back(std::get<1>(it.second));
     }
     return terminals;
 }
 
-std::vector<int> place_terminals(const std::unique_ptr<geometrycentral::surface::ManifoldSurfaceMesh>& mesh, const std::unique_ptr<geometrycentral::surface::VertexPositionGeometry>& geometry, const double radius, const double space = 4.0, const std::string& sampling_method = "Voxel") {
+std::vector<int> place_terminals(const std::unique_ptr<geometrycentral::surface::ManifoldSurfaceMesh>& mesh, const std::unique_ptr<geometrycentral::surface::VertexPositionGeometry>& geometry, const double radius, const double space = 3.0, const std::string& sampling_method = "Poisson") {
     assert(radius > 0);
     assert(space > 0);
+
+    std::vector<int> terminals;
     if(sampling_method == "Voxel") {
-        return place_terminals_voxel(mesh, geometry, radius, space);
+        terminals = place_terminals_voxel(mesh, geometry, radius, space);
     } else if(sampling_method == "Poisson") {
-        return place_terminals_poisson(mesh, geometry, radius, space);
+        terminals = place_terminals_poisson(mesh, geometry, radius, space);
     } else {
         assert(0);
     }
+
+    return terminals;
 }

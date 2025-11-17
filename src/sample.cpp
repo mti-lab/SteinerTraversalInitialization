@@ -24,14 +24,14 @@ int main(void) {
 
     std::tie(mesh, geometry) = geometrycentral::surface::readManifoldSurfaceMesh("../models/surfaces/bunny/bunny_hr.obj");
 
-    double radius = 0.02;
-
     polyscope::init();
     polyscope::registerSurfaceMesh("mesh", geometry->inputVertexPositions, mesh->getFaceVertexList());
 
     std::vector<geometrycentral::surface::SurfacePoint> nodes;
     std::vector<bool> isFixedNode;
     std::vector<std::array<int, 2>> segments;
+
+    const double radius = 0.02;
 
     std::tie(nodes, isFixedNode, segments) = generate_initial_curve(mesh, geometry, radius);
 

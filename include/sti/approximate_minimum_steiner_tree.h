@@ -69,8 +69,8 @@ std::vector<std::vector<int>> approximate_minimum_steiner_tree(const std::unique
 
     std::vector<std::vector<int>> mst(num_face);
     for(const auto& edge : edges) {
-        mst[edge.first].push_back(edge.second);
-        mst[edge.second].push_back(edge.first);
+        mst[edge.first].emplace_back(edge.second);
+        mst[edge.second].emplace_back(edge.first);
     }
     return mst;
 }
